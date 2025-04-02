@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Launcher</title>
+    <script type="module">
+        (async () => {
+            const container = document.getElementById('containerEle');
+            const loadingScreen = document.getElementById('dopple-loading-screen');
+            
+            const { DoppleXR } = await import('https://builds.dopple.io/packages/dopple-sdk@alpha/dopple-sdk.js');
+            const sessionId = window.crypto.randomUUID();
+
+            if (!localStorage.getItem('ROARR_LOG')) {
+                localStorage.setItem('ROARR_LOG', 'true');
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const doppleConfig = JSON.parse(urlParams.get('dopple') || '{}');
+
+            console.log("doppleConfig", doppleConfig);
+
+            const {
+                arMode = false,
+                owner,
+                workspace,
+                product,
+                version,
+                selection = {},
+            } = doppleConfig;
+
+            const dopple = new DoppleXR({
+                container,
+                selection,
+                productVersion: version,
+                owner,
+                workspace,
+                projectName: product,
+                logNamespace: 'sdk',
+                sessionId,
+            });
+
+            await dopple.load();
+            dopple.resize({ trackParentSize: true });
+            dopple.run();
+
+            loadingScreen.style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+
+            if (arMode) {
+                await dopple.startAR();
+            }
+        })();
+    </script>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        #dopple-loading-screen {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background: #FFF;
+            width: 100%;
+            height: 100vh;
+            z-index: 2;
+        }
+        .cube {
+            animation: anim-cube-rotate 2s linear infinite;
+            height: 3rem;
+            width: 3rem;
+            position: relative;
+            transform: rotateX(-40deg) rotateY(60deg);
+            transform-style: preserve-3d;
+        }
+        @keyframes anim-cube-rotate {
+            from { transform: rotateX(-40deg) rotateY(45deg); }
+            to { transform: rotateX(-40deg) rotateY(-315deg); }
+        }
+        [class^="cube__face--"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .cube__face--top { transform: rotateX(90deg) translate3d(0, -1.5rem, 0); }
+        .cube__face--front { transform: translateZ(1.5rem); }
+        .cube__face--left { transform: translateX(-1.5rem) rotateY(-90deg); }
+        .cube__face--right { transform: translateX(1.5rem) rotateY(90deg); }
+        .cube__face--back { transform: translateZ(-1.5rem) rotateY(180deg); }
+        .loading-text { font-size: 1.25rem; font-weight: bold; margin-top: 2.5rem; }
+    </style>
+</head>
+<body>
+    <div id="dopple-loading-screen">
+        <div class="cube">
+            <svg class="cube__face--front" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
+            <svg class="cube__face--left" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
+            <svg class="cube__face--right" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
+            <svg class="cube__face--back" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
+        </div>
+        <span class="loading-text">Loading 3D...</span>
+    </div>
+    <div id="mainContent" style="display: none;">
+        <div id="containerEle"></div>
+    </div>
+</body>
+</html>
